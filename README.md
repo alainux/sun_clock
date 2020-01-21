@@ -1,15 +1,7 @@
-# Flutter Clock
+# Sun Clock
 
-Welcome to Flutter Clock!
+Flutter solar clock for [Flutter Clock Face Challenge](https://flutter.dev/clock)
 
-See [flutter.dev/clock](https://flutter.dev/clock) for how to get started, submission requirements, contest rules, and FAQs.
+Displays the solar time and hour angle (and local time), and displays the sun position based on the user's longitude.
 
-See a [live demo](https://maryx.github.io/flutter_clock) with Flutter for Web!
-
-Example [Analog Clock](analog_clock)
-
-<img src='analog_clock/analog.gif' width='350'>
-
-Example [Digital Clock](digital_clock)
-
-<img src='digital_clock/digital.gif' width='350'>
+<img width="870" alt="Screen Shot 2020-01-20 at 10 53 04 PM" src="https://user-images.githubusercontent.com/6836149/72769337-1a18db00-3bd9-11ea-821e-f838d0eaee06.png">
