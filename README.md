@@ -30,7 +30,7 @@ Time of sunrise in local area. Shown with a blue hand. In this case, **7:03:00 A
 
 **Sunset time**
 ![image](https://user-images.githubusercontent.com/6836149/73172814-9f712380-40e2-11ea-9465-2e421594784f.png)
-Time of sunrise in local area. Shown with an orange handle. In this case, **8:55:00 PM**
+Time of sunset in local area. Shown with an orange handle. In this case, **8:55:00 PM**
 
 **Solar noon*
 ![image](https://user-images.githubusercontent.com/6836149/73172854-b9ab0180-40e2-11ea-9531-60dffac7fcc3.png)
