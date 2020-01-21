@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:analog_clock/dial.dart';
+import 'package:analog_clock/sun_icon.dart';
 import 'package:flutter_clock_helper/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -13,7 +14,6 @@ import 'package:intl/intl.dart';
 import 'package:vector_math/vector_math_64.dart' show radians, degrees2Radians;
 
 import 'drawn_hand.dart';
-import 'drawn_sun.dart';
 import 'model/solartime.dart';
 import 'utils/position.dart';
 
@@ -78,9 +78,6 @@ class _AnalogClockState extends State<AnalogClock> {
   }
 
   void _updateModel() {
-
-    print('Getting position');
-
     // get users position
     getPosition().then((Position pos) {
       setState(() {
@@ -160,7 +157,7 @@ class _AnalogClockState extends State<AnalogClock> {
   }
 
   bool _isDay() {
-    return _sunHourAngle != null ? _sunHourAngle.abs() <= 66.6 : false;
+    return _sunTimes != null && _sunTimes.containsKey('sunrise') && _sunTimes.containsKey('sunset') ? _now.isAfter(_sunTimes['sunrise']) && _now.isBefore(_sunTimes['sunset']) : true;
   }
 
   double _exactMinute(DateTime time) {
@@ -235,59 +232,63 @@ class _AnalogClockState extends State<AnalogClock> {
           children: [
             // Example of a hand drawn with [CustomPainter].
             if (_sunHourAngle != null) ...[
-              SunHand(
+              if (true) DrawnHand(
                 color: Colors.yellow,
                 thickness: 1,
                 size: 0.8,
                 angleRadians: _durationExactHour(_dur) * radiansPerHour,
               ),
 
-              SizedBox.expand(
-                child: ClipOval(
-                  clipper: CircleClipper(),
-                  child: Transform.rotate(
-                    angle: _sunHourAngle * degrees2Radians + pi / 2,
-                    alignment: Alignment.center,
-                    child: Transform.translate(
-                        child: Center(
-                          child: Text(
-                            '☀️',
-                            style: TextStyle(
-                                fontSize: 60,
-                                color: Colors.orange,
-                                fontWeight: FontWeight.w900,
-                                height: 0.8),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        offset: Offset(-120, 7)),
-                  ),
-                ),
+              if (true) SunIconHand(
+                angleRadians: _sunHourAngle,
               )
             ],
 
             ClockDial(color: customTheme.primaryColor),
 
-            DrawnHand(
+            if (true) DrawnHand(
               color: customTheme.accentColor,
               thickness: 1,
               size: 0.8,
               angleRadians: (_now.second) * radiansPerTick,
             ),
-            DrawnHand(
+            if (true) DrawnHand(
               color: customTheme.highlightColor,
               thickness: 4,
               size: 0.5,
               angleRadians: _exactMinute(_now) * radiansPerTick,
             ),
-            DrawnHand(
+            if (true) DrawnHand(
               color: customTheme.primaryColor,
               thickness: 4,
               size: 0.3,
               angleRadians: _exactHour(_now) * radiansPerHour,
             ),
 
-            Positioned(
+
+            if (true && _sunTimes.containsKey('sunrise')) DrawnHand(
+              color: Colors.blue,
+              thickness: 1,
+              size: 1,
+              angleRadians: _exactHour(_sunTimes['sunrise']) * radiansPerHour,
+            ),
+
+            if (true && _sunTimes.containsKey('sunset')) DrawnHand(
+              color: Colors.orange,
+              thickness: 1,
+              size: 1,
+              angleRadians: _exactHour(_sunTimes['sunset']) * radiansPerHour,
+            ),
+
+            if (true && _sunTimes.containsKey('solarNoon')) DrawnHand(
+              color: customTheme.primaryColor,
+              thickness: 1,
+              size: 1,
+              angleRadians: _exactHour(_sunTimes['solarNoon']) * radiansPerHour,
+            ),
+
+
+            if (true) Positioned(
               left: 0,
               bottom: 0,
               child: Padding(
@@ -295,45 +296,9 @@ class _AnalogClockState extends State<AnalogClock> {
                 child: weatherInfo,
               ),
             ),
-
-            if (_sunTimes.containsKey('sunset')) DrawnHand(
-              color: Colors.orange,
-              thickness: 1,
-              size: 1,
-              angleRadians: _exactHour(_sunTimes['sunset']) * radiansPerHour,
-            ),
-
-            if (_sunTimes.containsKey('sunrise')) DrawnHand(
-              color: Colors.blue,
-              thickness: 1,
-              size: 1,
-              angleRadians: _exactHour(_sunTimes['sunrise']) * radiansPerHour,
-            ),
-
-            if (_sunTimes.containsKey('solarNoon')) DrawnHand(
-              color: customTheme.primaryColor,
-              thickness: 1,
-              size: 1,
-              angleRadians: _exactHour(_sunTimes['solarNoon']) * radiansPerHour,
-            ),
           ],
         ),
       ),
     );
-  }
-}
-
-class CircleClipper extends CustomClipper<Rect> {
-  @override
-  Rect getClip(Size size) {
-    return Rect.fromCircle(
-        center: Offset(size.width / 2, size.height / 2),
-        radius: 120
-    );
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Rect> oldClipper) {
-    return true;
   }
 }
