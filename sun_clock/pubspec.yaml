@@ -12,6 +12,8 @@ dependencies:
     path: ../flutter_clock_helper
   cupertino_icons: ^0.1.2
   geolocator: ^5.2.0
+  flutter_suncalc: ^0.1.0
+
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +21,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Assets
+  assets:
+    - assets/

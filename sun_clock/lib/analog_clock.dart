@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-
+import 'dart:math';
+import 'package:analog_clock/dial.dart';
 import 'package:flutter_clock_helper/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -11,12 +12,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:vector_math/vector_math_64.dart' show radians, degrees2Radians;
 
-import 'container_hand.dart';
 import 'drawn_hand.dart';
 import 'drawn_sun.dart';
 import 'model/solartime.dart';
 import 'utils/position.dart';
-import 'dart:math' as math;
+
+import 'package:flutter_suncalc/flutter_suncalc.dart';
+
 
 /// Total distance traveled by a second or a minute hand, each second or minute,
 /// respectively.
@@ -45,8 +47,10 @@ class _AnalogClockState extends State<AnalogClock> {
   Timer _timer;
 
   Position _position;
-  double _angle = 0;
+  double _sunHourAngle = 0;
   double _hour = 12;
+
+  Map<String, DateTime> _sunTimes = {};
 
   @override
   void initState() {
@@ -74,6 +78,9 @@ class _AnalogClockState extends State<AnalogClock> {
   }
 
   void _updateModel() {
+
+    print('Getting position');
+
     // get users position
     getPosition().then((Position pos) {
       setState(() {
@@ -86,7 +93,20 @@ class _AnalogClockState extends State<AnalogClock> {
       });
 
       SolarTime.generateLookupTables(longitude: pos.longitude);
+      _updateSunCalcData(pos);
+
     });
+  }
+
+  _updateSunCalcData(Position pos) {
+    DateTime date = DateTime.now();
+
+    var times = SunCalc.getTimes(date, pos.latitude, pos.longitude);
+
+    setState(() {
+      _sunTimes = times.map((k, v) => MapEntry(k, v.toLocal()));
+    });
+
   }
 
   void _updateTime() async {
@@ -103,7 +123,7 @@ class _AnalogClockState extends State<AnalogClock> {
         SolarTime solar = SolarTime(date: _now, longitude: _pos.longitude);
 
         _hour = solar.hour;
-        _angle = solar.angle;
+        _sunHourAngle = solar.angle;
 
         _dur = Duration(milliseconds: (_hour * 60 * 60 * 1000).round());
       }
@@ -132,7 +152,7 @@ class _AnalogClockState extends State<AnalogClock> {
   }
 
   String _formatAngle() {
-    return _angle != null ? _angle.toStringAsFixed(2) : '';
+    return _sunHourAngle != null ? _sunHourAngle.toStringAsFixed(2) : '';
   }
 
   String _formatHour() {
@@ -140,7 +160,19 @@ class _AnalogClockState extends State<AnalogClock> {
   }
 
   bool _isDay() {
-    return _angle != null ? _angle.abs() <= 66.6 : false;
+    return _sunHourAngle != null ? _sunHourAngle.abs() <= 66.6 : false;
+  }
+
+  double _exactMinute(DateTime time) {
+    return time.minute + (time.second / 60);
+  }
+
+  double _exactHour(DateTime time) {
+    return time.hour + (time.minute/60) + (time.second / (60 * 60));
+  }
+
+  double _durationExactHour(Duration duration) {
+    return duration.inSeconds/(60*60);
   }
 
   @override
@@ -159,19 +191,19 @@ class _AnalogClockState extends State<AnalogClock> {
             // Minute hand.
             highlightColor: Colors.grey,
             // Second hand.
-            accentColor: Colors.white,
-            backgroundColor: Color(0xFFD2E3FC),
+            accentColor: Colors.blueGrey,
+            backgroundColor: Colors.white,
           )
         : Theme.of(context).copyWith(
-            primaryColor: Colors.white,
+            primaryColor: Color(0xffF9EDF6),
             highlightColor: Colors.grey,
-            accentColor: Colors.black,
-            backgroundColor: Color(0xFF3C4043),
+            accentColor: Color(0xffA3AAF9),
+            backgroundColor: Color(0xff07000E),
           );
 
     final time = DateFormat.Hms().format(DateTime.now());
     final weatherInfo = DefaultTextStyle(
-      style: TextStyle(color: customTheme.primaryColor),
+      style: TextStyle(color: customTheme.highlightColor),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -191,39 +223,68 @@ class _AnalogClockState extends State<AnalogClock> {
 
     return Semantics.fromProperties(
       properties: SemanticsProperties(
-        label: 'Analog clock with time $time',
+        label: 'Analog clock with sun position and time $time',
         value: time,
       ),
       child: Container(
-        color: customTheme.backgroundColor,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: customTheme.backgroundColor,
+        ),
         child: Stack(
           children: [
             // Example of a hand drawn with [CustomPainter].
-            if (_angle != null)
-              DrawnSun(
-                color: Colors.grey,
+            if (_sunHourAngle != null) ...[
+              SunHand(
+                color: Colors.yellow,
                 thickness: 1,
-                size: 1,
-                angleRadians: -1 * _angle * degrees2Radians,
+                size: 0.8,
+                angleRadians: _durationExactHour(_dur) * radiansPerHour,
               ),
+
+              SizedBox.expand(
+                child: ClipOval(
+                  clipper: CircleClipper(),
+                  child: Transform.rotate(
+                    angle: _sunHourAngle * degrees2Radians + pi / 2,
+                    alignment: Alignment.center,
+                    child: Transform.translate(
+                        child: Center(
+                          child: Text(
+                            '☀️',
+                            style: TextStyle(
+                                fontSize: 60,
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w900,
+                                height: 0.8),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        offset: Offset(-120, 7)),
+                  ),
+                ),
+              )
+            ],
+
+            ClockDial(color: customTheme.primaryColor),
 
             DrawnHand(
               color: customTheme.accentColor,
-              thickness: 4,
-              size: 1,
-              angleRadians: (_dur.inSeconds + 1) * radiansPerTick,
+              thickness: 1,
+              size: 0.8,
+              angleRadians: (_now.second) * radiansPerTick,
             ),
             DrawnHand(
               color: customTheme.highlightColor,
-              thickness: 8,
-              size: 0.9,
-              angleRadians: (_dur.inMinutes + 1) * radiansPerTick,
+              thickness: 4,
+              size: 0.5,
+              angleRadians: _exactMinute(_now) * radiansPerTick,
             ),
             DrawnHand(
               color: customTheme.primaryColor,
               thickness: 4,
-              size: 0.5,
-              angleRadians: (_dur.inHours + 1) * radiansPerHour,
+              size: 0.3,
+              angleRadians: _exactHour(_now) * radiansPerHour,
             ),
 
             Positioned(
@@ -234,9 +295,45 @@ class _AnalogClockState extends State<AnalogClock> {
                 child: weatherInfo,
               ),
             ),
+
+            if (_sunTimes.containsKey('sunset')) DrawnHand(
+              color: Colors.orange,
+              thickness: 1,
+              size: 1,
+              angleRadians: _exactHour(_sunTimes['sunset']) * radiansPerHour,
+            ),
+
+            if (_sunTimes.containsKey('sunrise')) DrawnHand(
+              color: Colors.blue,
+              thickness: 1,
+              size: 1,
+              angleRadians: _exactHour(_sunTimes['sunrise']) * radiansPerHour,
+            ),
+
+            if (_sunTimes.containsKey('solarNoon')) DrawnHand(
+              color: customTheme.primaryColor,
+              thickness: 1,
+              size: 1,
+              angleRadians: _exactHour(_sunTimes['solarNoon']) * radiansPerHour,
+            ),
           ],
         ),
       ),
     );
+  }
+}
+
+class CircleClipper extends CustomClipper<Rect> {
+  @override
+  Rect getClip(Size size) {
+    return Rect.fromCircle(
+        center: Offset(size.width / 2, size.height / 2),
+        radius: 120
+    );
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Rect> oldClipper) {
+    return true;
   }
 }

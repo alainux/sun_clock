@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'hand.dart';
 import 'dart:math' as math;
 
-class DrawnSun extends Hand {
+class SunHand extends Hand {
   /// Create a const clock [Hand].
   ///
   /// All of the parameters are required and must not be null.
-  const DrawnSun({
+  const SunHand({
     @required Color color,
     @required this.thickness,
     @required double size,
@@ -74,10 +74,6 @@ class _SunPainter extends CustomPainter {
       ..strokeCap = StrokeCap.square;
 
     canvas.drawLine(center, position, linePaint);
-
-    final circlePaint = Paint()..color = Colors.yellowAccent;
-
-    canvas.drawCircle(position, 20, circlePaint);
   }
 
   @override

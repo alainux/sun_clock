@@ -19,15 +19,13 @@ class SolarTime {
     double lstm = 15 * (tz.inMinutes / 60);
 
     // number of days since start of year
-    num d = date.difference(DateTime(date.year, 1, 1, 0, 0)).inDays +
-        (date.hour / 24);
+    num d = date.difference(DateTime(date.year, 1, 1, 0, 0)).inDays + (date.hour / 24) + 1;
 
     // B is in degrees
-    double b = ((360 / 365) * (d - 81)) * (math.pi % 180);
+    double b = ((360 / 365) * (d - 81)) * (math.pi / 180);
 
     // equation of time (minutes)
-    double eot =
-        9.87 * math.sin(2 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b);
+    double eot = 9.87 * math.sin(2 * b) - 7.53 * math.cos(b) - 1.5 * math.sin(b);
 
     // time correction factor (minutes)
     double tc = 4 * (longitude - lstm) + eot;
